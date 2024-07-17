@@ -83,7 +83,7 @@ void create_socket(ctx_t * ctx, int argc, char ** argv) {
 
     char * socket_fd = NULL;
     asprintf(&socket_fd, "%d", wl_socket_get_fd(ctx->socket));
-    ctx->compositor_argv[argc + 2] = strdup("--socket-fd");
+    ctx->compositor_argv[argc + 2] = strdup("--wayland-fd");
     ctx->compositor_argv[argc + 3] = socket_fd;
 }
 
