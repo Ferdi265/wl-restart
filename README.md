@@ -44,6 +44,7 @@ argument. This will change in a future version.
 ## Dependencies
 
 - `CMake`
+- `scdoc` (for man pages)
 
 ## Building
 
