@@ -39,9 +39,6 @@ options:
   -n N, --max-restarts N   restart a maximum of N times (default 10)
 ```
 
-Currently, you have to provide the full path to your compositor as the first
-argument. This will change in a future version.
-
 ## Dependencies
 
 - `CMake`
