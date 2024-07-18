@@ -8,7 +8,7 @@ clients that support seamless compositor reconnects (most KDE programs, e.g.
 `wl-restart` is inspired by KDE's `kwin_wayland_wrapper` and reuses
 `wl-socket.c` from its implementation.
 
-## Compositor Requirements
+## Compositor Support
 
 Your compositor must support Wayland socket handover. The socket is passed to
 the compositor with the options `--socket NAME --wayland-fd FD`.
@@ -16,9 +16,26 @@ the compositor with the options `--socket NAME --wayland-fd FD`.
 **Supported Compositors:**
 
 - Kwin (but you should probably use `kwin_wayland_wrapper` instead, which is default in Plasma 6)
-- Sway (only with my `feature-compositor-restart` branch)
-- Hyprland (only with my `feature-compositor-restart` branch)
-- your compositor?
+- Sway (via [`feature-compositor-restart`](https://github.com/ferdi265/sway/tree/feature-compositor-restart) branch)
+- Hyprland (via [`feature-compositor-restart`](https://github.com/ferdi265/hyprland/tree/feature-compositor-restart) branch)
+
+Other compositors do not support Wayland socket handover as of now. If there are
+any compositors with support for socket handover missing from this list, please
+open an issue for it on GitHub.
+
+## Client and Toolkit Support
+
+The socket handover implemented by `wl-restart` and compatible compositors
+allows Wayland clients to survive a crash or restart of the compositor without
+losing any state. However, this needs explicit support in the client or toolkit
+used.
+
+Currently, only **Qt6** supports surviving a compositor restart. The
+environment variable `QT_WAYLAND_RECONNECT=1` needs to be set in order for Qt
+apps to stay alive when the compositor crashes.
+
+A more complete list of toolkits and their state supporting this can be found at
+in the [KDE wiki](https://invent.kde.org/plasma/kwin/-/wikis/Restarting).
 
 ## Features
 
