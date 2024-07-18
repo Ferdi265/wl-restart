@@ -32,6 +32,10 @@
 #define LOCK_SUFFIX ".lock"
 #define LOCK_SUFFIXLEN 5
 
+#ifndef SUN_LEN
+#define SUN_LEN(su) (sizeof (*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))
+#endif
+
 struct wl_socket {
     int fd;
     int fd_lock;
