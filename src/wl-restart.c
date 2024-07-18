@@ -157,4 +157,6 @@ int main(int argc, char ** argv) {
         create_socket(&ctx, argc, argv);
         run(&ctx);
     }
+
+    cleanup(&ctx);
 }
