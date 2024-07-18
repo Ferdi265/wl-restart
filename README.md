@@ -44,6 +44,11 @@ For example, run this in your TTY instead of normally starting your compositor:
 - `$ wl-restart sway`
 - `$ wl-restart -n 20 hyprland`
 
+## Installation
+
+`wl-restart` can be installed from the ArchLinux AUR with the package
+[wl-restart-git](https://aur.archlinux.org/packages/wl-restart-git).
+
 ## Dependencies
 
 - `CMake`
