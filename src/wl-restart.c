@@ -9,7 +9,6 @@
 typedef struct {
     struct wl_socket * socket;
 
-    char * compositor_path;
     char ** compositor_argv;
     int compositor_argc;
 
@@ -20,7 +19,6 @@ typedef struct {
 void init(ctx_t * ctx) {
     ctx->socket = NULL;
 
-    ctx->compositor_path = NULL;
     ctx->compositor_argv = NULL;
     ctx->compositor_argc = 0;
 
@@ -33,12 +31,6 @@ void cleanup(ctx_t * ctx) {
     if (ctx->socket != NULL) {
         wl_socket_destroy(ctx->socket);
         ctx->socket = NULL;
-    }
-
-    // free path
-    if (ctx->compositor_path != NULL) {
-        free(ctx->compositor_path);
-        ctx->compositor_path = NULL;
     }
 
     // free argv
@@ -73,9 +65,6 @@ void create_socket(ctx_t * ctx, int argc, char ** argv) {
         ctx->compositor_argv[i] = strdup(argv[i]);
     }
 
-    // TODO: resolve compositor path
-    ctx->compositor_path = strdup(ctx->compositor_argv[0]);
-
     // add extra arguments
     char * socket_name = strdup(wl_socket_get_display_name(ctx->socket));
     ctx->compositor_argv[argc + 0] = strdup("--socket");
@@ -90,7 +79,7 @@ void create_socket(ctx_t * ctx, int argc, char ** argv) {
 int run_compositor(ctx_t * ctx) {
     pid_t pid = fork();
     if (pid == 0) {
-        execv(ctx->compositor_path, ctx->compositor_argv);
+        execvp(ctx->compositor_argv[0], ctx->compositor_argv);
         exit(1);
     }
 
