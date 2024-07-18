@@ -39,6 +39,11 @@ options:
   -n N, --max-restarts N   restart a maximum of N times (default 10)
 ```
 
+For example, run this in your TTY instead of normally starting your compositor:
+
+- `$ wl-restart sway`
+- `$ wl-restart -n 20 hyprland`
+
 ## Dependencies
 
 - `CMake`
