@@ -17,6 +17,7 @@ the compositor with the options `--socket NAME --wayland-fd FD`.
 
 - Kwin (but you should probably use `kwin_wayland_wrapper` instead, which is default in Plasma 6)
 - Sway (only with my `feature-compositor-restart` branch)
+- Hyprland (only with my `feature-compositor-restart` branch)
 - your compositor?
 
 ## Features
