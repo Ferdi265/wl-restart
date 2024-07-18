@@ -71,7 +71,11 @@ void create_socket(ctx_t * ctx, int argc, char ** argv) {
     ctx->compositor_argv[argc + 1] = socket_name;
 
     char * socket_fd = NULL;
-    asprintf(&socket_fd, "%d", wl_socket_get_fd(ctx->socket));
+    if (asprintf(&socket_fd, "%d", wl_socket_get_fd(ctx->socket)) == -1) {
+        printf("error: failed to convert fd to string\n");
+        exit_fail(ctx);
+    }
+
     ctx->compositor_argv[argc + 2] = strdup("--wayland-fd");
     ctx->compositor_argv[argc + 3] = socket_fd;
 }
