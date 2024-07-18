@@ -104,6 +104,9 @@ void run(ctx_t * ctx) {
             printf("info: compositor exited with code %d, incrementing restart counter (%d)\n", status, ctx->restart_counter);
         }
     }
+
+    printf("error: too many restarts, quitting\n");
+    exit_fail(ctx);
 }
 
 void usage(ctx_t * ctx) {
