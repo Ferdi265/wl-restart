@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/signal.h>
+#include <sys/errno.h>
 #include "wl-socket.h"
 
 typedef struct {
@@ -13,6 +15,7 @@ typedef struct {
     char ** compositor_argv;
     int compositor_argc;
 
+    pid_t compositor_pid;
     int restart_counter;
     int max_restarts;
 } ctx_t;
@@ -23,6 +26,7 @@ void init(ctx_t * ctx) {
     ctx->compositor_argv = NULL;
     ctx->compositor_argc = 0;
 
+    ctx->compositor_pid = -1;
     ctx->restart_counter = 0;
     ctx->max_restarts = 10;
 }
@@ -42,6 +46,11 @@ void cleanup(ctx_t * ctx) {
 
         free(ctx->compositor_argv);
         ctx->compositor_argv = NULL;
+    }
+
+    if (ctx->compositor_pid != -1) {
+        kill(ctx->compositor_pid, SIGTERM);
+        ctx->compositor_pid = -1;
     }
 }
 
@@ -81,21 +90,60 @@ void create_socket(ctx_t * ctx, int argc, char ** argv) {
     ctx->compositor_argv[argc + 3] = socket_fd;
 }
 
-int run_compositor(ctx_t * ctx) {
+static ctx_t * signal_ctx = NULL;
+void handle_term_signal(int signal) {
+    ctx_t * ctx = signal_ctx;
+
+    printf("info: signal %s received, exiting\n", strsignal(signal));
+    exit_fail(ctx);
+}
+
+void handle_restart_signal(int signal) {
+    ctx_t * ctx = signal_ctx;
+
+    if (ctx->compositor_pid != -1) {
+        printf("info: signal %s received, restarting compositor\n", strsignal(signal));
+        kill(ctx->compositor_pid, SIGTERM);
+    }
+}
+
+void register_signals(ctx_t * ctx) {
+    signal_ctx = ctx;
+    signal(SIGINT, handle_term_signal);
+    signal(SIGTERM, handle_term_signal);
+    signal(SIGHUP, handle_restart_signal);
+}
+
+void start_compositor(ctx_t * ctx) {
     pid_t pid = fork();
     if (pid == 0) {
         execvp(ctx->compositor_argv[0], ctx->compositor_argv);
         exit(1);
+    } else {
+        ctx->compositor_pid = pid;
+    }
+}
+
+int wait_compositor(ctx_t * ctx) {
+    int stat;
+    while (waitpid(ctx->compositor_pid, &stat, 0) == -1) {
+        if (errno != EINTR) {
+            printf("error: failed to wait for compositor: %s\n", strerror(errno));
+            exit_fail(ctx);
+        } else {
+            // interrupted by signal
+            // try again
+        }
     }
 
-    int stat;
-    waitpid(pid, &stat, 0);
+    ctx->compositor_pid = -1;
     return stat;
 }
 
 void run(ctx_t * ctx) {
     while (ctx->restart_counter < ctx->max_restarts) {
-        int status = run_compositor(ctx);
+        start_compositor(ctx);
+        int status = wait_compositor(ctx);
 
         if (!WIFSIGNALED(status) && WEXITSTATUS(status) == 0) {
             printf("info: compositor exited successfully, quitting\n");
@@ -163,6 +211,7 @@ int main(int argc, char ** argv) {
         usage(&ctx);
     } else {
         create_socket(&ctx, argc, argv);
+        register_signals(&ctx);
         run(&ctx);
     }
 
