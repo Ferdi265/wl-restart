@@ -90,30 +90,6 @@ void create_socket(ctx_t * ctx, int argc, char ** argv) {
     ctx->compositor_argv[argc + 3] = socket_fd;
 }
 
-static ctx_t * signal_ctx = NULL;
-void handle_term_signal(int signal) {
-    ctx_t * ctx = signal_ctx;
-
-    printf("info: signal %s received, exiting\n", strsignal(signal));
-    exit_fail(ctx);
-}
-
-void handle_restart_signal(int signal) {
-    ctx_t * ctx = signal_ctx;
-
-    if (ctx->compositor_pid != -1) {
-        printf("info: signal %s received, restarting compositor\n", strsignal(signal));
-        kill(ctx->compositor_pid, SIGTERM);
-    }
-}
-
-void register_signals(ctx_t * ctx) {
-    signal_ctx = ctx;
-    signal(SIGINT, handle_term_signal);
-    signal(SIGTERM, handle_term_signal);
-    signal(SIGHUP, handle_restart_signal);
-}
-
 void start_compositor(ctx_t * ctx) {
     pid_t pid = fork();
     if (pid == 0) {
@@ -127,17 +103,47 @@ void start_compositor(ctx_t * ctx) {
 int wait_compositor(ctx_t * ctx) {
     int stat;
     while (waitpid(ctx->compositor_pid, &stat, 0) == -1) {
-        if (errno != EINTR) {
-            printf("error: failed to wait for compositor: %s\n", strerror(errno));
-            exit_fail(ctx);
-        } else {
+        if (errno == EINTR) {
             // interrupted by signal
             // try again
+        } else if (errno == ECHILD) {
+            // signal handler probably already waited for this child
+            // try again
+        } else {
+            printf("error: failed to wait for compositor: %s\n", strerror(errno));
+            exit_fail(ctx);
         }
     }
 
     ctx->compositor_pid = -1;
     return stat;
+}
+
+static ctx_t * signal_ctx = NULL;
+void handle_quit_signal(int signal) {
+    ctx_t * ctx = signal_ctx;
+
+    printf("info: signal %s received, quitting\n", strsignal(signal));
+    exit_fail(ctx);
+}
+
+void handle_restart_signal(int signal) {
+    ctx_t * ctx = signal_ctx;
+
+    if (ctx->compositor_pid != -1) {
+        printf("info: signal %s received, restarting compositor\n", strsignal(signal));
+        kill(ctx->compositor_pid, SIGTERM);
+        wait_compositor(ctx);
+        start_compositor(ctx);
+        printf("info: compositor restarted\n");
+    }
+}
+
+void register_signals(ctx_t * ctx) {
+    signal_ctx = ctx;
+    signal(SIGINT, handle_quit_signal);
+    signal(SIGTERM, handle_quit_signal);
+    signal(SIGHUP, handle_restart_signal);
 }
 
 void run(ctx_t * ctx) {
