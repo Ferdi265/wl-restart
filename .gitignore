@@ -1,1 +1,4 @@
 build/
+wl-restart-*.tar.gz
+wl-restart-*.tar.gz.sig
+wl-restart-*.tar.gz.asc
