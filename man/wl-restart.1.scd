@@ -89,13 +89,13 @@ the *--socket* and *--wayland-fd* options.
 	Upstream Sway does not support socket handover, but socket handover is
 	implemented in the following branch and works well with *wl-restart*:
 
-	https://github.com/ferdi265/sway/tree/feature-compositor-restart
+	https://github.com/ferdi265/sway/tree/feature-socket-handover
 
 *hyprland*
 	Upstream Hyprland does not support socket handover, but socket handover is
 	implemented in the following branch and works well with *wl-restart*:
 
-	https://github.com/ferdi265/hyprland/tree/feature-compositor-restart
+	https://github.com/ferdi265/hyprland/tree/feature-socket-handover
 
 Other compositors do not support Wayland socket handover as of now. If there are
 any compositors with support for socket handover missing from this list, please
