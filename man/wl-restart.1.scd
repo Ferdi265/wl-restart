@@ -62,6 +62,10 @@ If the compositor exits with any other exit code, *wl-restart* increments the
 restart counter and restarts the compositor if it is smaller than the maximum.
 Otherwise, *wl-restart* cleans up the socket and exits as well.
 
+When the compositor is restarted, *wl-restart* sets the environment variable
+*WL_RESTART_COUNT* to the restart counter, so other scripts can react to it and
+e.g. display a message or restart services that don't restart automatically.
+
 When *wl-restart* receives a *SIGINT* or *SIGTERM* signal, it kills the
 compositor with *SIGTERM* if it's currently running, cleans up the socket, and
 exits.

@@ -162,6 +162,17 @@ void run(ctx_t * ctx) {
             ctx->restart_counter++;
             printf("info: compositor exited with code %d, incrementing restart counter (%d)\n", status, ctx->restart_counter);
         }
+
+        // format new restart count
+        char * restart_counter_str = NULL;
+        if (asprintf(&restart_counter_str, "%d", ctx->restart_counter) == -1) {
+            printf("error: failed to convert restart counter to string\n");
+            exit_fail(ctx);
+        }
+
+        // add restart count to environment
+        setenv("WL_RESTART_COUNT", restart_counter_str, true);
+        free(restart_counter_str);
     }
 
     printf("error: too many restarts, quitting\n");

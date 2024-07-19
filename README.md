@@ -42,6 +42,7 @@ in the [KDE wiki](https://invent.kde.org/plasma/kwin/-/wikis/Restarting).
 - Restarts your compositor when it crashes
 - Don't lose your session (for programs that support seamless Wayland reconnect)
 - Configurable max number of crashes before giving up
+- Sets `WL_RESTART_COUNT` to the current restart counter on compositor restart.
 
 ## Usage
 
