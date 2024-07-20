@@ -62,7 +62,7 @@ void exit_fail(ctx_t * ctx) {
 void create_socket(ctx_t * ctx, int argc, char ** argv) {
     ctx->socket = wl_socket_create();
     if (ctx->socket == NULL) {
-        printf("error: failed to create wayland socket\n");
+        fprintf(stderr, "error: failed to create wayland socket\n");
         exit_fail(ctx);
     }
 
@@ -82,7 +82,7 @@ void create_socket(ctx_t * ctx, int argc, char ** argv) {
 
     char * socket_fd = NULL;
     if (asprintf(&socket_fd, "%d", wl_socket_get_fd(ctx->socket)) == -1) {
-        printf("error: failed to convert fd to string\n");
+        fprintf(stderr, "error: failed to convert fd to string\n");
         exit_fail(ctx);
     }
 
@@ -110,7 +110,7 @@ int wait_compositor(ctx_t * ctx) {
             // signal handler probably already waited for this child
             // try again
         } else {
-            printf("error: failed to wait for compositor: %s\n", strerror(errno));
+            fprintf(stderr, "error: failed to wait for compositor: %s\n", strerror(errno));
             exit_fail(ctx);
         }
     }
@@ -123,7 +123,7 @@ static ctx_t * signal_ctx = NULL;
 void handle_quit_signal(int signal) {
     ctx_t * ctx = signal_ctx;
 
-    printf("info: signal %s received, quitting\n", strsignal(signal));
+    fprintf(stderr, "info: signal %s received, quitting\n", strsignal(signal));
     exit_fail(ctx);
 }
 
@@ -131,11 +131,11 @@ void handle_restart_signal(int signal) {
     ctx_t * ctx = signal_ctx;
 
     if (ctx->compositor_pid != -1) {
-        printf("info: signal %s received, restarting compositor\n", strsignal(signal));
+        fprintf(stderr, "info: signal %s received, restarting compositor\n", strsignal(signal));
         kill(ctx->compositor_pid, SIGTERM);
         wait_compositor(ctx);
         start_compositor(ctx);
-        printf("info: compositor restarted\n");
+        fprintf(stderr, "info: compositor restarted\n");
     }
 }
 
@@ -152,21 +152,21 @@ void run(ctx_t * ctx) {
         int status = wait_compositor(ctx);
 
         if (!WIFSIGNALED(status) && WEXITSTATUS(status) == 0) {
-            printf("info: compositor exited successfully, quitting\n");
+            fprintf(stderr, "info: compositor exited successfully, quitting\n");
             cleanup(ctx);
             exit(0);
         } else if (WIFSIGNALED(status) && WTERMSIG(status) == SIGTRAP) {
             ctx->restart_counter = 0;
-            printf("info: compositor exited with SIGTRAP, resetting counter\n");
+            fprintf(stderr, "info: compositor exited with SIGTRAP, resetting counter\n");
         } else {
             ctx->restart_counter++;
-            printf("info: compositor exited with code %d, incrementing restart counter (%d)\n", status, ctx->restart_counter);
+            fprintf(stderr, "info: compositor exited with code %d, incrementing restart counter (%d)\n", status, ctx->restart_counter);
         }
 
         // format new restart count
         char * restart_counter_str = NULL;
         if (asprintf(&restart_counter_str, "%d", ctx->restart_counter) == -1) {
-            printf("error: failed to convert restart counter to string\n");
+            fprintf(stderr, "error: failed to convert restart counter to string\n");
             exit_fail(ctx);
         }
 
@@ -175,7 +175,7 @@ void run(ctx_t * ctx) {
         free(restart_counter_str);
     }
 
-    printf("error: too many restarts, quitting\n");
+    fprintf(stderr, "error: too many restarts, quitting\n");
     exit_fail(ctx);
 }
 
@@ -210,7 +210,7 @@ int main(int argc, char ** argv) {
             usage(&ctx);
         } else if (strcmp(opt, "-n") == 0 || strcmp(opt, "--max-restarts") == 0) {
             if (arg == NULL) {
-                printf("error: option '%s' needs an argument\n", opt);
+                fprintf(stderr, "error: option '%s' needs an argument\n", opt);
                 exit_fail(&ctx);
             }
 
@@ -219,7 +219,7 @@ int main(int argc, char ** argv) {
         } else if (strcmp(opt, "--") == 0) {
             break;
         } else {
-            printf("error: unknown option '%s', see --help\n", opt);
+            fprintf(stderr, "error: unknown option '%s', see --help\n", opt);
             exit_fail(&ctx);
         }
     }
