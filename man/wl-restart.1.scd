@@ -28,9 +28,10 @@ Example Usage:
 	$ wl-restart -n 7 hyprland
 
 This only works for compositors that support Wayland socket handover and that
-support the *--socket* and *--wayland-fd* options. Currently that is only Kwin,
-but patches exist for sway and hyprland. For details, see *COMPOSITOR SUPPORT*
-below.
+support the *--socket* and *--wayland-fd* options or any of the other socket
+handover mechanisms detailed under *OPTIONS*. Currently that is only Kwin and
+Hyprland, but patches exist for sway and labwc. For details, see *COMPOSITOR
+SUPPORT* below.
 
 Currently there aren't many clients and toolkits that support surviving a
 compositor restart, with *Qt6* and the KDE apps being a notable exception. For
@@ -43,6 +44,13 @@ details, see *CLIENT AND TOOLKIT SUPPORT* below.
 
 *-n N, --max-restarts N*
 	Restart the compositor a maximum of *N* times. (default is 10)
+
+*--kde*
+	Pass socket via cli options --socket and --wayland-fd. (default)
+	This passes the socket in the same form as KDE's *kwin_wayland_wrapper*.
+
+*--env*
+	Pass socket via env vars WAYLAND_SOCKET_NAME and WAYLAND_SOCKET_FD.
 
 # BEHAVIOUR
 
@@ -85,14 +93,28 @@ the *--socket* and *--wayland-fd* options.
 	by *kwin_wayland_wrapper*, which is automatically used in
 	*startplasma_wayland*.
 
+	Kwin uses the *KDE* socket handover mechanism.
+
+*hyprland*
+	Hyprland Git supports socket handover and works well with *wl-restart*.
+
+	Hyprland uses the *KDE* socket handover mechanism.
+
 *sway*
 	Upstream Sway does not support socket handover, but socket handover is
 	implemented in the following branch and works well with *wl-restart*:
 
 	https://github.com/ferdi265/sway/tree/feature-socket-handover
 
-*hyprland*
-	Hyprland Git supports socket handover and works well with *wl-restart*.
+	This branch uses the *KDE* socket handover mechanism.
+
+*labwc*
+	Upstream labwc does not support socket handover, but socket handover is
+	implemented in the following branch and works with *wl-restart*:
+
+	https://github.com/ferdi265/labwc/tree/feature-socket-handover
+
+	This branch uses the *env var* socket handover mechanism.
 
 Other compositors do not support Wayland socket handover as of now. If there are
 any compositors with support for socket handover missing from this list, please

@@ -9,6 +9,11 @@
 #include <sys/errno.h>
 #include "wl-socket.h"
 
+typedef enum {
+    MODE_KDE = 0,
+    MODE_ENV = 2,
+} pass_mode_t;
+
 typedef struct {
     struct wl_socket * socket;
 
@@ -18,6 +23,7 @@ typedef struct {
     pid_t compositor_pid;
     int restart_counter;
     int max_restarts;
+    pass_mode_t mode;
 } ctx_t;
 
 void init(ctx_t * ctx) {
@@ -29,6 +35,7 @@ void init(ctx_t * ctx) {
     ctx->compositor_pid = -1;
     ctx->restart_counter = 0;
     ctx->max_restarts = 10;
+    ctx->mode = MODE_KDE;
 }
 
 void cleanup(ctx_t * ctx) {
@@ -41,7 +48,7 @@ void cleanup(ctx_t * ctx) {
     // free argv
     if (ctx->compositor_argv != NULL) {
         for (int i = 0; i < ctx->compositor_argc; i++) {
-            free(ctx->compositor_argv[i]);
+            if (ctx->compositor_argv[i] != NULL) free(ctx->compositor_argv[i]);
         }
 
         free(ctx->compositor_argv);
@@ -66,8 +73,9 @@ void create_socket(ctx_t * ctx, int argc, char ** argv) {
         exit_fail(ctx);
     }
 
-    // allocate space for two extra options with arguments + null terminator
+    // allocate space for two extra options with arguments for cli modes
     ctx->compositor_argc = argc + 4;
+    // add 1 for null terminator
     ctx->compositor_argv = calloc(ctx->compositor_argc + 1, sizeof (char *));
 
     // copy compositor arguments into argv array
@@ -75,25 +83,52 @@ void create_socket(ctx_t * ctx, int argc, char ** argv) {
         ctx->compositor_argv[i] = strdup(argv[i]);
     }
 
-    // add extra arguments
-    char * socket_name = strdup(wl_socket_get_display_name(ctx->socket));
-    ctx->compositor_argv[argc + 0] = strdup("--socket");
-    ctx->compositor_argv[argc + 1] = socket_name;
+    // prepare arguments for cli modes
+    if (ctx->mode == MODE_KDE) {
+        const char * socket_name_arg = "--socket";
+        const char * socket_fd_arg = "--wayland-fd";
 
-    char * socket_fd = NULL;
-    if (asprintf(&socket_fd, "%d", wl_socket_get_fd(ctx->socket)) == -1) {
-        fprintf(stderr, "error: failed to convert fd to string\n");
-        exit_fail(ctx);
+        // add extra arguments
+        char * socket_name = strdup(wl_socket_get_display_name(ctx->socket));
+        ctx->compositor_argv[argc + 0] = strdup(socket_name_arg);
+        ctx->compositor_argv[argc + 1] = socket_name;
+
+        char * socket_fd = NULL;
+        if (asprintf(&socket_fd, "%d", wl_socket_get_fd(ctx->socket)) == -1) {
+            fprintf(stderr, "error: failed to convert fd to string\n");
+            exit_fail(ctx);
+        }
+
+        ctx->compositor_argv[argc + 2] = strdup(socket_fd_arg);
+        ctx->compositor_argv[argc + 3] = socket_fd;
     }
 
-    ctx->compositor_argv[argc + 2] = strdup("--wayland-fd");
-    ctx->compositor_argv[argc + 3] = socket_fd;
+    // prepare environment for env modes
+    if (ctx->mode == MODE_ENV) {
+        const char * socket_name_var = "WAYLAND_SOCKET_NAME";
+        const char * socket_fd_var = "WAYLAND_SOCKET_FD";
+
+        // set environment vars
+        setenv(socket_name_var, wl_socket_get_display_name(ctx->socket), true);
+
+        char * socket_fd = NULL;
+        if (asprintf(&socket_fd, "%d", wl_socket_get_fd(ctx->socket)) == -1) {
+            fprintf(stderr, "error: failed to convert fd to string\n");
+            exit_fail(ctx);
+        }
+
+        setenv(socket_fd_var, socket_fd, true);
+        free(socket_fd);
+    }
 }
 
 void start_compositor(ctx_t * ctx) {
     pid_t pid = fork();
     if (pid == 0) {
+        // exec into compositor process
         execvp(ctx->compositor_argv[0], ctx->compositor_argv);
+
+        fprintf(stderr, "error: failed to start compositor\n");
         exit(1);
     } else {
         ctx->compositor_pid = pid;
@@ -186,8 +221,10 @@ void usage(ctx_t * ctx) {
     printf("crashes and keeps the wayland socket alive.\n");
     printf("\n");
     printf("options:\n");
-    printf("  -h,   --help             show this help\n");
-    printf("  -n N, --max-restarts N   restart a maximum of N times (default 10)\n");
+    printf("  -h,   --help           show this help\n");
+    printf("  -n N, --max-restarts N restart a maximum of N times (default 10)\n");
+    printf("        --kde            pass socket via cli options --socket and --wayland-fd (default)\n");
+    printf("        --env            pass socket via env vars WAYLAND_SOCKET_NAME and WAYLAND_SOCKET_FD\n");
     cleanup(ctx);
     exit(0);
 }
@@ -216,6 +253,10 @@ int main(int argc, char ** argv) {
 
             argc--, argv++;
             ctx.max_restarts = atoi(arg);
+        } else if (strcmp(opt, "--kde") == 0) {
+            ctx.mode = MODE_KDE;
+        } else if (strcmp(opt, "--env") == 0) {
+            ctx.mode = MODE_ENV;
         } else if (strcmp(opt, "--") == 0) {
             break;
         } else {

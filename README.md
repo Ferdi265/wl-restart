@@ -16,8 +16,9 @@ the compositor with the options `--socket NAME --wayland-fd FD`.
 **Supported Compositors:**
 
 - Kwin (but you should probably use `kwin_wayland_wrapper` instead, which is default in Plasma 6)
+- Hyprland
 - Sway (via [`feature-socket-handover`](https://github.com/ferdi265/sway/tree/feature-socket-handover) branch)
-- Hyprland (merged in git, but not released yet)
+- labwc (via [`feature-socket-handover`](https://github.com/ferdi265/labwc/tree/feature-socket-handover) branch)
 
 Other compositors do not support Wayland socket handover as of now. If there are
 any compositors with support for socket handover missing from this list, please
@@ -43,6 +44,9 @@ in the [KDE wiki](https://invent.kde.org/plasma/kwin/-/wikis/Restarting).
 - Don't lose your session (for programs that support seamless Wayland reconnect)
 - Configurable max number of crashes before giving up
 - Sets `WL_RESTART_COUNT` to the current restart counter on compositor restart.
+- Support for two different experimental socket handover mechanisms
+  - `--kde`: `--socket` and `--wayland-fd`
+  - `--env`: `WAYLAND_SOCKET_NAME` and `WAYLAND_SOCKET_FD`
 
 ## Usage
 
@@ -53,8 +57,10 @@ compositor restart helper. restarts your compositor when it
 crashes and keeps the wayland socket alive.
 
 options:
-  -h,   --help             show this help
-  -n N, --max-restarts N   restart a maximum of N times (default 10)
+  -h,   --help           show this help
+  -n N, --max-restarts N restart a maximum of N times (default 10)
+        --kde            pass socket via cli options --socket and --wayland-fd (default)
+        --env            pass socket via env vars WAYLAND_SOCKET_NAME and WAYLAND_SOCKET_FD
 ```
 
 For example, run this in your TTY instead of normally starting your compositor:
