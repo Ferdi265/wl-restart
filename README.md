@@ -44,9 +44,11 @@ in the [KDE wiki](https://invent.kde.org/plasma/kwin/-/wikis/Restarting).
 - Don't lose your session (for programs that support seamless Wayland reconnect)
 - Configurable max number of crashes before giving up
 - Sets `WL_RESTART_COUNT` to the current restart counter on compositor restart.
-- Support for two different experimental socket handover mechanisms
+- Support for four different experimental socket handover mechanisms
   - `--kde`: `--socket` and `--wayland-fd`
+  - `--cli`: `--wayland-socket` and `--wayland-fd`
   - `--env`: `WAYLAND_SOCKET_NAME` and `WAYLAND_SOCKET_FD`
+  - `--systemd`: [systemd socket activation](https://man.archlinux.org/man/sd_listen_fds.3.en) via `LISTEN_PID`, `LISTEN_FDS`, and `LISTEN_FDNAMES`
 
 ## Usage
 
@@ -60,7 +62,9 @@ options:
   -h,   --help           show this help
   -n N, --max-restarts N restart a maximum of N times (default 10)
         --kde            pass socket via cli options --socket and --wayland-fd (default)
+        --cli            pass socket via cli options --wayland-socket and --wayland-fd
         --env            pass socket via env vars WAYLAND_SOCKET_NAME and WAYLAND_SOCKET_FD
+        --systemd        pass socket via env vars LISTEN_PID, LISTEN_FDS, and LISTEN_FDNAMES
 ```
 
 For example, run this in your TTY instead of normally starting your compositor:

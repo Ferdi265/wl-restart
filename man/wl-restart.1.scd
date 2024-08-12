@@ -49,8 +49,21 @@ details, see *CLIENT AND TOOLKIT SUPPORT* below.
 	Pass socket via cli options --socket and --wayland-fd. (default)
 	This passes the socket in the same form as KDE's *kwin_wayland_wrapper*.
 
+*--cli*
+	Pass socket via cli options --wayland-socket and --wayland-fd.
+
 *--env*
 	Pass socket via env vars WAYLAND_SOCKET_NAME and WAYLAND_SOCKET_FD.
+
+*--systemd*
+	Pass socket via env vars LISTEN_PID, LISTEN_FDS, and LISTEN_FDNAMES.
+	This passes the socket in the same form as the systemd socket activation
+	protocol. Further information can be found in *sd_listen_fds*(3).
+
+	The only difference from regular systemd socket activation is that in this
+	case *wl-restart* will have already created the Wayland socket lock file,
+	which would not be created by regular systemd socket activation as it is
+	Wayland-specific.
 
 # BEHAVIOUR
 
