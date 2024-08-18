@@ -47,12 +47,13 @@ echo "- adding version file"
 echo "$TAG" > "wl-restart-$VERSION/version.txt"
 
 echo "- creating archive"
-tar caf "$REPODIR/wl-restart-$VERSION.tar.gz" "wl-restart-$VERSION/"
+mkdir -p "$REPODIR/dist"
+tar caf "$REPODIR/dist/wl-restart-$VERSION.tar.gz" "wl-restart-$VERSION/"
 
 if [[ ! -z "${SIGKEY+z}" ]]; then
     echo "- signing archive"
-    gpg --yes -u "$SIGKEY" -o "$REPODIR/wl-restart-$VERSION.tar.gz.asc" --armor --detach-sig "$REPODIR/wl-restart-$VERSION.tar.gz"
-    gpg --yes -o "$REPODIR/wl-restart-$VERSION.tar.gz.sig" --dearmor "$REPODIR/wl-restart-$VERSION.tar.gz.asc"
+    gpg --yes -u "$SIGKEY" -o "$REPODIR/dist/wl-restart-$VERSION.tar.gz.asc" --armor --detach-sig "$REPODIR/dist/wl-restart-$VERSION.tar.gz"
+    gpg --yes -o "$REPODIR/dist/wl-restart-$VERSION.tar.gz.sig" --dearmor "$REPODIR/dist/wl-restart-$VERSION.tar.gz.asc"
 else
     echo "- skipping signing archive (SIGKEY not set)"
 fi
