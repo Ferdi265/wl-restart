@@ -107,6 +107,10 @@ the *--socket* and *--wayland-fd* options.
 	https://github.com/ferdi265/sway/tree/feature-socket-handover
 
 	This branch uses the *KDE* socket handover mechanism.
+	
+	https://github.com/ferdi265/sway/tree/feature-socket-handover-alternative
+
+	This alternative branch uses the *env var* socket handover mechanism.
 
 *labwc*
 	Upstream labwc does not support socket handover, but socket handover is
