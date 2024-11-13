@@ -96,7 +96,7 @@ the *--socket* and *--wayland-fd* options.
 	Kwin uses the *KDE* socket handover mechanism.
 
 *hyprland*
-	Hyprland Git supports socket handover and works well with *wl-restart*.
+	Hyprland supports socket handover and works well with *wl-restart*.
 
 	Hyprland uses the *KDE* socket handover mechanism.
 
