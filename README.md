@@ -16,9 +16,9 @@ the compositor with the options `--socket NAME --wayland-fd FD`.
 **Supported Compositors:**
 
 - Kwin (but you should probably use `kwin_wayland_wrapper` instead, which is default in Plasma 6)
-- Hyprland
-- Sway (via [`feature-socket-handover`](https://github.com/ferdi265/sway/tree/feature-socket-handover) branch)
-- labwc (via [`feature-socket-handover`](https://github.com/ferdi265/labwc/tree/feature-socket-handover) branch)
+- Hyprland (`--kde` mechanism)
+- Sway (via [`feature-socket-handover`](https://github.com/ferdi265/sway/tree/feature-socket-handover) branch, `--kde` mechanism)
+- labwc (via [`feature-socket-handover`](https://github.com/ferdi265/labwc/tree/feature-socket-handover) branch, `--env` mechanism)
 
 Other compositors do not support Wayland socket handover as of now. If there are
 any compositors with support for socket handover missing from this list, please
