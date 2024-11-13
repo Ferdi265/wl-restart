@@ -20,7 +20,7 @@ typedef struct {
     char ** compositor_argv;
     int compositor_argc;
 
-    pid_t compositor_pid;
+    volatile pid_t compositor_pid;
     int restart_counter;
     int max_restarts;
     pass_mode_t mode;
@@ -55,9 +55,10 @@ void cleanup(ctx_t * ctx) {
         ctx->compositor_argv = NULL;
     }
 
-    if (ctx->compositor_pid != -1) {
-        kill(ctx->compositor_pid, SIGTERM);
+    pid_t compositor_pid = ctx->compositor_pid;
+    if (compositor_pid != -1) {
         ctx->compositor_pid = -1;
+        kill(compositor_pid, SIGTERM);
     }
 }
 
@@ -135,9 +136,10 @@ void start_compositor(ctx_t * ctx) {
     }
 }
 
-int wait_compositor(ctx_t * ctx) {
+void wait_compositor(ctx_t * ctx, int * exit_status, int * exit_signal) {
     int stat;
-    while (waitpid(ctx->compositor_pid, &stat, 0) == -1) {
+    pid_t compositor_pid = ctx->compositor_pid;
+    while (compositor_pid != -1 && waitpid(compositor_pid, &stat, 0) == -1) {
         if (errno == EINTR) {
             // interrupted by signal
             // try again
@@ -148,10 +150,29 @@ int wait_compositor(ctx_t * ctx) {
             fprintf(stderr, "error: failed to wait for compositor: %s\n", strerror(errno));
             exit_fail(ctx);
         }
+
+        // re-check compositor pid
+        // signal handler might have already killed compositor
+        compositor_pid = ctx->compositor_pid;
     }
 
+    if (ctx->compositor_pid == -1) {
+        // signal handler already killed the compositor
+        // simulate SIGHUP
+        *exit_status = -1;
+        *exit_signal = SIGHUP;
+    } else if (WIFSIGNALED(stat)) {
+        // compositor killed by signal
+        *exit_status = -1;
+        *exit_signal = WTERMSIG(stat);
+    } else {
+        // compositor died normally
+        *exit_status = WEXITSTATUS(stat);
+        *exit_signal = -1;
+    }
+
+    // clear compositor pid
     ctx->compositor_pid = -1;
-    return stat;
 }
 
 static ctx_t * signal_ctx = NULL;
@@ -165,12 +186,11 @@ void handle_quit_signal(int signal) {
 void handle_restart_signal(int signal) {
     ctx_t * ctx = signal_ctx;
 
-    if (ctx->compositor_pid != -1) {
-        fprintf(stderr, "info: signal %s received, restarting compositor\n", strsignal(signal));
-        kill(ctx->compositor_pid, SIGTERM);
-        wait_compositor(ctx);
-        start_compositor(ctx);
-        fprintf(stderr, "info: compositor restarted\n");
+    fprintf(stderr, "info: signal %s received, restarting compositor\n", strsignal(signal));
+    pid_t compositor_pid = ctx->compositor_pid;
+    if (compositor_pid != -1) {
+        ctx->compositor_pid = -1;
+        kill(compositor_pid, SIGTERM);
     }
 }
 
@@ -184,18 +204,29 @@ void register_signals(ctx_t * ctx) {
 void run(ctx_t * ctx) {
     while (ctx->restart_counter < ctx->max_restarts) {
         start_compositor(ctx);
-        int status = wait_compositor(ctx);
+        int exit_status = -1;
+        int exit_signal = -1;
+        wait_compositor(ctx, &exit_status, &exit_signal);
 
-        if (!WIFSIGNALED(status) && WEXITSTATUS(status) == 0) {
+        if (exit_status == 0) {
             fprintf(stderr, "info: compositor exited successfully, quitting\n");
             cleanup(ctx);
             exit(0);
-        } else if (WIFSIGNALED(status) && WTERMSIG(status) == SIGTRAP) {
-            ctx->restart_counter = 0;
-            fprintf(stderr, "info: compositor exited with SIGTRAP, resetting counter\n");
-        } else {
+        } else if (exit_status > 0) {
             ctx->restart_counter++;
-            fprintf(stderr, "info: compositor exited with code %d, incrementing restart counter (%d)\n", status, ctx->restart_counter);
+            fprintf(stderr, "info: compositor exited with code %d, incrementing restart counter (%d)\n", exit_status, ctx->restart_counter);
+        } else if (exit_signal == SIGHUP) {
+            ctx->restart_counter = 0;
+            fprintf(stderr, "info: compositor died with signal %s, restarting\n", strsignal(SIGHUP));
+        } else if (exit_signal == SIGTRAP) {
+            ctx->restart_counter = 0;
+            fprintf(stderr, "info: compositor died with signal %s, resetting counter\n", strsignal(SIGTRAP));
+        } else if (exit_signal > 0) {
+            ctx->restart_counter++;
+            fprintf(stderr, "info: compositor died with signal %s, incrementing restart counter (%d)\n", strsignal(exit_signal), ctx->restart_counter);
+        } else {
+            fprintf(stderr, "error: failed to detect how compositor exited\n");
+            exit_fail(ctx);
         }
 
         // format new restart count
