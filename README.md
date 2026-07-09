@@ -61,7 +61,7 @@ options:
   -h,   --help           show this help
   -n N, --max-restarts N restart a maximum of N times (default 10)
         --kde            pass socket via cli options --socket and --wayland-fd (default)
-		--env            pass socket via env vars WAYLAND_SOCKET_NAME and WAYLAND_SOCKET_FD
+        --env            pass socket via env vars WAYLAND_SOCKET_NAME and WAYLAND_SOCKET_FD
         --systemd        pass socket via env vars LISTEN_PID, LISTEN_FDS, and LISTEN_FDNAMES
 ```
 

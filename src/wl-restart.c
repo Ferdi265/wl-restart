@@ -10,14 +10,13 @@
 #include <sys/errno.h>
 #include "wl-socket.h"
 
-
 // taken from libsystemd <systemd/sd-daemon.h>
 // part of the systemd socket activation protocol
 #define SD_LISTEN_FDS_START 3
 
 typedef enum {
     MODE_KDE = 0,
-	MODE_ENV = 1,
+    MODE_ENV = 1,
     MODE_SYSTEMD = 2,
 } pass_mode_t;
 
@@ -113,32 +112,33 @@ void create_socket(ctx_t * ctx, int argc, char ** argv) {
 
     // prepare environment for systemd/env mode
     if (ctx->mode == MODE_ENV || ctx->mode == MODE_SYSTEMD) {
-		const char * socket_name_var = ctx->mode == MODE_ENV ? "WAYLAND_SOCKET_NAME" : "LISTEN_FDNAMES";
+        const char * socket_name_var = ctx->mode == MODE_ENV ? "WAYLAND_SOCKET_NAME" : "LISTEN_FDNAMES";
         const char * socket_fd_var = ctx->mode == MODE_ENV ? "WAYLAND_SOCKET_FD" : "LISTEN_FDS";
 
         // set environment vars
         setenv(socket_name_var, wl_socket_get_display_name(ctx->socket), true);
-	   	if (ctx->mode == MODE_ENV) {
+
+        if (ctx->mode == MODE_ENV) {
             char * socket_fd = NULL;
             if (asprintf(&socket_fd, "%d", wl_socket_get_fd(ctx->socket)) == -1) {
                 fprintf(stderr, "error: failed to convert fd to string\n");
                 exit_fail(ctx);
             }
-			setenv(socket_fd_var, socket_fd, true);
+
+            setenv(socket_fd_var, socket_fd, true);
             free(socket_fd);
-			 } else if (ctx->mode == MODE_SYSTEMD) {
+        } else if (ctx->mode == MODE_SYSTEMD) {
             // systemd socket activation has a hardcoded fd number
             // and only passes the number of fds
             setenv(socket_fd_var, "1", true);
         }
-
-	}
+    }
+}
 
 void start_compositor(ctx_t * ctx) {
     pid_t pid = fork();
     if (pid == 0) {
-		
-   		if (ctx->mode == MODE_SYSTEMD) {
+        if (ctx->mode == MODE_SYSTEMD) {
             // set up systemd socket activation
 
             // set LISTEN_PID env var
@@ -147,6 +147,7 @@ void start_compositor(ctx_t * ctx) {
                 fprintf(stderr, "error: failed to convert compositor pid to string\n");
                 exit(1);
             }
+
             setenv("LISTEN_PID", listen_pid, true);
             free(listen_pid);
 
@@ -291,7 +292,7 @@ void usage(ctx_t * ctx) {
     printf("  -h,   --help           show this help\n");
     printf("  -n N, --max-restarts N restart a maximum of N times (default 10)\n");
     printf("        --kde            pass socket via cli options --socket and --wayland-fd (default)\n");
-	printf("        --env            pass socket via env vars WAYLAND_SOCKET_NAME and WAYLAND_SOCKET_FD\n");
+    printf("        --env            pass socket via env vars WAYLAND_SOCKET_NAME and WAYLAND_SOCKET_FD\n");
     printf("        --systemd        pass socket via env vars LISTEN_PID, LISTEN_FDS, and LISTEN_FDNAMES\n");
     cleanup(ctx);
     exit(0);
@@ -323,9 +324,8 @@ int main(int argc, char ** argv) {
             ctx.max_restarts = atoi(arg);
         } else if (strcmp(opt, "--kde") == 0) {
             ctx.mode = MODE_KDE;
-		}
-		else if(strcmo(opt, "--env") == 0) {
-			ctx.mode = MODE_ENV;
+        } else if(strcmp(opt, "--env") == 0) {
+            ctx.mode = MODE_ENV;
         } else if (strcmp(opt, "--systemd") == 0) {
             ctx.mode = MODE_SYSTEMD;
         } else if (strcmp(opt, "--") == 0) {
