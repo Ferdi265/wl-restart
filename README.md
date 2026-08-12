@@ -77,13 +77,13 @@ For example, run this in your TTY instead of normally starting your compositor:
 
 ## Dependencies
 
-- `CMake`
+- `meson`
 - `scdoc` (for man pages)
 
 ## Building
 
-- Run `cmake -B build`
-- Run `cmake --build build`
+- Run `meson build`
+- Run `ninja -C build`
 
 ## Files
 
